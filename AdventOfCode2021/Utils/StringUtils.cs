@@ -8,6 +8,12 @@ namespace AdventOfCode2021.Utils
 {
     public static class StringUtils
     {
+        /// <summary>
+        /// Takes in a string and parses out tokens in order, split by the strings. For instance, 1:3,5 could have splits = [":",","] and return {"1","3","5"}
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="splits"></param>
+        /// <returns></returns>
         public static List<string> SplitInOrder(string input, string[] splits)
         {
             var tokens = new List<string>();

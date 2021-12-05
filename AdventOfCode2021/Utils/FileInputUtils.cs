@@ -52,14 +52,24 @@ namespace AdventOfCode2021.Utils
             return myLongs.ToList();
         }
 
+        /// <summary>
+        /// Splits line based on separator string. Example would be "1,2,3,4" with "," separator would return {"1", "2", "3", "4"}
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="separator"></param>
+        /// <returns></returns>
         public static List<int> SplitLineIntoIntList(string input, string separator)
         {
             var stringInts = Regex.Split(input, separator);
-            if (stringInts[stringInts.Length - 1].Length == 0)
+            var nonEmptyStringInts = new List<string>();
+            for (int i = 0; i < stringInts.Length; i++)
             {
-                stringInts = stringInts.SkipLast(1).ToArray();
+                if (stringInts[i].Length > 0)
+                {
+                    nonEmptyStringInts.Add(stringInts[i]);
+                }
             }
-            int[] myInts = Array.ConvertAll(stringInts, int.Parse);
+            int[] myInts = Array.ConvertAll(nonEmptyStringInts.ToArray(), int.Parse);
             return myInts.ToList();
         }
 
