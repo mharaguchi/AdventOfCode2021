@@ -193,5 +193,35 @@ gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce
             }
         }
         #endregion
-    }
+
+/*
+ *          * 0: abcefg
+ * 1: cf
+ * 2: acdeg
+ * 3: acdfg
+ * 4: bcdf
+ * 5: abdfg
+ * 6: abdefg
+ * 7: acf
+ * 8: abcdefg
+ * 9: abcdfg
+
+a:8
+b:6
+c:8
+d:7
+e:4
+f:9
+g:7
+
+Look for 4 freq = 'e'
+Look for 6 freq = 'b'
+Look for 9 freq = 'f'
+Look for 2-digit, compare to 3-digit, extra digit is 'a'
+Look for 8 freq not a = 'c'
+Look for 4-digit, 7 freq = 'd'
+Last one = 'g'
+*/
+
+}
 }
