@@ -26,10 +26,13 @@ CN -> C";
 
         const int ITERATIONS = 40;
 
+        //private static Dictionary<char, long> _charCounts = new Dictionary<char, long>();
+        private static Dictionary<(string, int), Dictionary<char, long>> dynamicCharCounts = new Dictionary<(string, int), Dictionary<char, long>>();
+
         public static string Run(string puzzleInput)
         {
-            return RunPart2(_sampleInput);
-            //return RunPart2(puzzleInput);
+            //return RunPart2(_sampleInput);
+            return RunPart2(puzzleInput);
         }
 
         internal static string RunPart2(string input)
@@ -39,24 +42,23 @@ CN -> C";
 
             var pairs = GetPairs(lines);
 
-            var opStack = new Stack<(string, int)>();
+            //var opsList = new List<(string, int)>();
 
-            //add first 3 triples to stack
-            var startOp1 = (RunInsertion(template.Substring(0, 2), pairs), ITERATIONS - 1);
-            var startOp2 = (RunInsertion(template.Substring(1, 2), pairs), ITERATIONS - 1);
-            var startOp3 = (RunInsertion(template.Substring(2, 2), pairs), ITERATIONS - 1);
+            //add first triples to list
+            //var startOp1 = (RunInsertion(template.Substring(0, 2), pairs), ITERATIONS - 1);
+            //var startOp2 = (RunInsertion(template.Substring(1, 2), pairs), ITERATIONS - 1);
+            //var startOp3 = (RunInsertion(template.Substring(2, 2), pairs), ITERATIONS - 1);
 
-            opStack.Push(startOp3);
-            opStack.Push(startOp2);
-            opStack.Push(startOp1);
+            //opsList.Add(startOp1);
+            //opsList.Add(startOp2);
+            //opsList.Add(startOp3);
 
-            var frequencyDictionary = RunOperations(opStack, pairs);
+            var opsList = GetOpsList(template, pairs);
+
+            var frequencyDictionary = RunOperations(opsList, pairs);
 
             var max = frequencyDictionary.Values.Max();
             var min = frequencyDictionary.Values.Min();
-
-            //var max = polymer.GroupBy(c => c).Select(c => c.Count()).Max();
-            //var min = polymer.GroupBy(c => c).Select(c => c.Count()).Min();
 
             var diff = max - min;
 
@@ -64,6 +66,19 @@ CN -> C";
         }
 
         #region Private Methods
+        private static List<(string, int)> GetOpsList(string template, Dictionary<string, string> pairs)
+        {
+            var opsList = new List<(string, int)>();
+
+            for(int i = 0; i < template.Length - 1; i++)
+            {
+                var triple = RunInsertion(template.Substring(i, 2), pairs);
+                opsList.Add((triple, ITERATIONS - 1));
+            }
+
+            return opsList;
+        }
+
         private static Dictionary<string, string> GetPairs(string[] lines)
         {
             var pairs = new Dictionary<string, string>();
@@ -79,40 +94,67 @@ CN -> C";
             return pairs;
         }
 
-        private static Dictionary<char, long> RunOperations(Stack<(string, int)> ops, Dictionary<string, string> pairs)
+        private static Dictionary<char, long> RunOperations(List<(string, int)> ops, Dictionary<string, string> pairs)
         {
-            var charCounts = new Dictionary<char, long>();
-            while (ops.Count > 0)
+            var totalCharCounts = new Dictionary<char, long>();
+            foreach(var op in ops)
             {
-                RunOperation(ops, pairs, charCounts, ops.Count == 1);
-                Console.WriteLine("ops count: " + ops.Count());
+                var currentCharCounts = new Dictionary<char, long>();
+                currentCharCounts = RunOperation(op, currentCharCounts, pairs);
+                MergeDictionaries(currentCharCounts, totalCharCounts);
             }
-            return charCounts;
+            AddLetterCount(ops[ops.Count - 1].Item1.Last(), totalCharCounts);
+
+            return totalCharCounts;
         }
 
-        private static void RunOperation(Stack<(string, int)> ops, Dictionary<string, string> pairs, Dictionary<char, long> charCounts, bool isLastOp)
+        private static void MergeDictionaries(Dictionary<char, long> source, Dictionary<char, long> target)
         {
-            var op = ops.Pop();
-            if (isLastOp && op.Item2 == 0) //last op, add all 3 letters
+            foreach(var pair in source)
             {
-                AddLetterCount(op.Item1[0], charCounts);
-                AddLetterCount(op.Item1[1], charCounts);
-                AddLetterCount(op.Item1[2], charCounts);
+                if (target.ContainsKey(pair.Key))
+                {
+                    target[pair.Key] = target[pair.Key] + pair.Value;
+                }
+                else
+                {
+                    target.Add(pair.Key, pair.Value);
+                }
             }
-            else if (op.Item2 == 0) //not last op, should add first 2 b/c 3rd is a dupe
+        }
+
+        private static Dictionary<char, long> RunOperation((string, int) op, Dictionary<char, long> currentCharCounts, Dictionary<string, string> pairs)
+        {
+            Dictionary<char, long> currentCharCountsCopy = new Dictionary<char, long>(currentCharCounts);
+
+            Console.WriteLine("dynamic dictionary contents: " + dynamicCharCounts.Count);
+
+            if (dynamicCharCounts.ContainsKey(op))
             {
-                AddLetterCount(op.Item1[0], charCounts);
-                AddLetterCount(op.Item1[1], charCounts);
+                return dynamicCharCounts[op];
+            }
+
+            if (op.Item2 == 0) //add first 2 b/c 3rd is a dupe except for the last token
+            {
+                AddLetterCount(op.Item1[0], currentCharCountsCopy);
+                AddLetterCount(op.Item1[1], currentCharCountsCopy);
             }
             else
             {
                 var newIterations = op.Item2 - 1;
-                var newOp1 = (RunInsertion(op.Item1.Substring(0, 2), pairs), newIterations); //Add 2 new triples to stack
+                var newOp1 = (RunInsertion(op.Item1.Substring(0, 2), pairs), newIterations); 
                 var newOp2 = (RunInsertion(op.Item1.Substring(1, 2), pairs), newIterations);
 
-                ops.Push(newOp2);
-                ops.Push(newOp1);
+                var dict1 = new Dictionary<char, long>(RunOperation(newOp1, new Dictionary<char, long>(currentCharCountsCopy), pairs));
+                var dict2 = new Dictionary<char, long>(RunOperation(newOp2, new Dictionary<char, long>(currentCharCountsCopy), pairs));
+
+                MergeDictionaries(dict1, dict2);
+                currentCharCountsCopy = new Dictionary<char, long>(dict2);
             }
+
+            dynamicCharCounts.Add(op, new Dictionary<char, long>(currentCharCountsCopy));
+
+            return currentCharCountsCopy;
         }
 
         private static void AddLetterCount(char thisChar, Dictionary<char, long> charCounts)
