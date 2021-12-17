@@ -67,5 +67,21 @@ namespace AdventOfCode2021.Utils
             }
             return intList;
         }
+
+        /// <summary>
+        /// Convert a hex string into 4-bit binary, using 0=0000, 1=0001, A=1010, etc
+        /// </summary>
+        /// <param name="hexString"></param>
+        /// <returns></returns>
+        public static string HexTo4BitBinaryString(string hexString)
+        {
+            string binarystring = String.Join(String.Empty,
+              hexString.Select(
+                c => Convert.ToString(Convert.ToInt32(c.ToString(), 16), 2).PadLeft(4, '0')
+              )
+            );
+
+            return binarystring;
+        }
     }
 }
