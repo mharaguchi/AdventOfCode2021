@@ -10,12 +10,12 @@ namespace AdventOfCode2021
 {
     public static class DayRunner
     {
-        const int DAY = 17;
+        const int DAY = 18;
 
         public static string GetAnswer()
         {
             var input = FileInputUtils.GetInput(DAY);
-            return Day17.Run(input).ToString();
+            return Day18.Run(input).ToString();
         }
     }
 }

@@ -83,5 +83,35 @@ namespace AdventOfCode2021.Utils
 
             return binarystring;
         }
+
+        /// <summary>
+        /// Takes a string and returns a substring expression that starts and ends with the given delimiters, like []
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="delimiter"></param>
+        /// <returns></returns>
+        public static string GetExpression(string source, char openChar, char closeChar)
+        {
+            if (!source.StartsWith(openChar))
+            {
+                return "";
+            }
+            var unclosedOpens = 1;
+            var tracker = 1;
+            while(unclosedOpens > 0)
+            {
+                if(source[tracker] == openChar)
+                {
+                    unclosedOpens++;
+                }
+                else if (source[tracker] == closeChar)
+                {
+                    unclosedOpens--;
+                }
+                tracker++;
+            }
+
+            return source[..tracker];
+        }
     }
 }
