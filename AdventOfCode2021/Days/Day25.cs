@@ -44,7 +44,7 @@ v.v..>>v.v
 
             while (changed)
             {
-                PrintBoard(board, steps);
+                //PrintBoard(board, steps);
                 steps++;
                 var result = Move(board);
                 changed = result.Item2;
