@@ -43,7 +43,7 @@ namespace AdventOfCode2021.Days
             var traversed = new List<Point>();
             var startingPoint = new Point(0, 0);
 
-            var currentSum = (long)0;
+            //var currentSum = (long)0;
 
             //_lowestRisk = GetInitialPath(startingPoint);
             _lowestRisk = 900;
