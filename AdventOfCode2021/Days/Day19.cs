@@ -146,14 +146,25 @@ namespace AdventOfCode2021.Days
 
         public static string Run(string puzzleInput)
         {
-            //return RunPart1(_sampleInput);
-            return RunPart1(puzzleInput);
+            return RunPart1(_sampleInput);
+            //return RunPart1(puzzleInput);
             //return RunPart2(_sampleInput);
             //return RunPart2(puzzleInput);
         }
 
         internal static Dictionary<int, (int, int, int)> _scannerLocations = new Dictionary<int, (int, int, int)>();
         internal static Dictionary<int, List<int>> _beaconDistances = new Dictionary<int, List<int>>();
+
+        /// <summary>
+        /// First int is scanner num, 2nd int is beacon number, List of int is the relative distances to the other beacons in this scanner
+        /// </summary>
+        internal static Dictionary<int, Dictionary<int, List<int>>> _beaconRelativeDistances = new Dictionary<int, Dictionary<int, List<int>>>();
+
+        internal static List<(int, int, int)> _normalizedBeaconLocations = new List<(int, int, int)>();
+
+        /// <summary>
+        /// Each scanner is a list of beacon locations relative to that scanner
+        /// </summary>
         internal static List<List<(int, int, int)>> _scanners = new List<List<(int, int, int)>>();
 
         internal static string RunPart1(string input)
@@ -184,8 +195,17 @@ namespace AdventOfCode2021.Days
                         }
                         if (!_scannerLocations.ContainsKey(i) && Have12CommonBeacons(knownLocation, i))
                         {
+                            //var location = GetAbsoluteScannerLocation(knownLocation, i);
+                            //foreach(var beaconLocation in _scanners[i])
+                            //{
+                            //    var normalizedBeaconLocation = (beaconLocation.Item1 + location.Item1, beaconLocation.Item2 + location.Item2, beaconLocation.Item3 + location.Item3);
+                            //    if (!_normalizedBeaconLocations.Contains(normalizedBeaconLocation))
+                            //    {
+                            //        _normalizedBeaconLocations.Add(normalizedBeaconLocation);
+                            //    }
+                            //}
                             Console.WriteLine($"12 common beacons found between {knownLocation} and {i}");
-                            _scannerLocations.Add(i, (0, 0, 0));
+                            _scannerLocations.Add(i, (0,0,0)); //Unable to find normalized location so far, so adding default value
                         }
                     }
                 }
@@ -194,8 +214,59 @@ namespace AdventOfCode2021.Days
             return "Done";
         }
 
+        internal static string RunPart2(string input)
+        {
+            return "";
+        }
+
+        #region Private Methods
+        private static bool IsBeaconMatch(KeyValuePair<int, List<int>> srcBeacon, KeyValuePair<int, List<int>> tgtBeacon)
+        {
+            var srcDistances = srcBeacon.Value;
+            var matches = tgtBeacon.Value.Where(x => srcDistances.Contains(x)).Count();
+            if (matches >= 11) //beacons that are the same should have the same relative distances to at least the other 11 overlapping beacons
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static (int, int, int) GetAbsoluteScannerLocation(int srcScanner, int tgtScanner)
+        {
+            foreach(var srcBeacon in _beaconRelativeDistances[srcScanner])
+            {
+                foreach(var tgtBeacon in _beaconRelativeDistances[tgtScanner])
+                {
+                    if (IsBeaconMatch(srcBeacon, tgtBeacon))
+                    {
+                        var srcBeaconLocation = _scanners[srcScanner][srcBeacon.Key];
+                        var tgtBeaconLocation = _scanners[tgtScanner][tgtBeacon.Key];
+
+                        var diffX = tgtBeaconLocation.Item1 - srcBeaconLocation.Item1;
+                        var diffY = tgtBeaconLocation.Item2 - srcBeaconLocation.Item2;
+                        var diffZ = tgtBeaconLocation.Item3 - srcBeaconLocation.Item3;
+
+                        var srcAbsoluteLocation = _scannerLocations[srcScanner];
+                        var tgtAbsoluteLocationX = srcAbsoluteLocation.Item1 + diffX;
+                        var tgtAbsoluteLocationY = srcAbsoluteLocation.Item2 + diffY;
+                        var tgtAbsoluteLocationZ = srcAbsoluteLocation.Item3 + diffZ;
+
+                        return (tgtAbsoluteLocationX, tgtAbsoluteLocationY, tgtAbsoluteLocationZ);
+                    }
+                }
+            }
+            throw new Exception("Could not translate scanner location");
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="scanners"></param>
+        /// <param name="lines"></param>
         private static void ProcessInput(List<List<(int, int, int)>> scanners, string[] lines)
         {
+            var beaconCount = 0;
             var beacons = new List<(int, int, int)>();
 
             foreach (var line in lines)
@@ -205,6 +276,7 @@ namespace AdventOfCode2021.Days
                     if (beacons.Any())
                     {
                         scanners.Add(beacons);
+                        beaconCount += beacons.Count();
                     }
                     beacons = new List<(int, int, int)>();
                 }
@@ -217,7 +289,9 @@ namespace AdventOfCode2021.Days
             if (beacons.Any()) //Add last scanner's beacons
             {
                 scanners.Add(beacons);
+                beaconCount += beacons.Count();
             }
+            Console.WriteLine("Total Beacons: " + beaconCount);
         }
 
         private static int SetBeaconDistances(Dictionary<int, List<int>> beaconDistances, List<List<(int, int, int)>> scanners)
@@ -225,8 +299,34 @@ namespace AdventOfCode2021.Days
             var dupes = 0;
             for (int s = 0; s < scanners.Count; s++)
             {
+                _beaconRelativeDistances.Add(s, new Dictionary<int, List<int>>());
+
                 var distances = new List<int>();
                 var theseBeacons = scanners[s];
+
+                /*
+                 * This section of code was added late, so it's a separate set of loops
+                 */
+                for (int i = 0; i < theseBeacons.Count; i++)
+                {
+                    for (int j = 0; j < theseBeacons.Count; j++)
+                    {
+                        if (i == j)
+                        {
+                            continue;
+                        }
+                        var dist = Math.Abs(theseBeacons[i].Item1 - theseBeacons[j].Item1) + Math.Abs(theseBeacons[i].Item2 - theseBeacons[j].Item2) + Math.Abs(theseBeacons[i].Item3 - theseBeacons[j].Item3);
+                        if (!_beaconRelativeDistances[s].ContainsKey(i))
+                        {
+                            _beaconRelativeDistances[s].Add(i, new List<int> { dist });
+                        }
+                        else
+                        {
+                            _beaconRelativeDistances[s][i].Add(dist);
+                        }
+                    }
+                }
+
                 for (int i = 0; i < theseBeacons.Count; i++)
                 {
                     for (int j = i + 1; j < theseBeacons.Count; j++)
@@ -248,12 +348,6 @@ namespace AdventOfCode2021.Days
             return dupes;
         }
 
-        internal static string RunPart2(string input)
-        {
-            return "";
-        }
-
-        #region Private Methods
         internal static bool Have12CommonBeacons(int knownScanner, int newScanner)
         {
             var count = 0;
